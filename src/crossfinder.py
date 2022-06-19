@@ -35,12 +35,66 @@ class CrossFinder:
              success, distance, angle
         where "success" = True if found, False if could not find good cross
         angle should be in degrees'''
+        img = camera_frame
 
-        img = cv2.cvtColor(camera_frame, cv2.COLOR_BGR2HSV)
+        threshold = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-        # plt.imshow(img[:, :, 2], cmap = 'gray')
-        # plt.show()
-        return False, 0.0, 0.0
+        myH, myS, myV = 79, 224, 208
+
+        hsvThreshold = 50
+
+        # plt.imshow(img)
+        filtered = cv2.inRange(threshold, (myH - hsvThreshold, myS - hsvThreshold, myV - hsvThreshold), (myH + hsvThreshold, myS + hsvThreshold, myV + hsvThreshold))
+
+        contours, hierarchy = cv2.findContours(filtered, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        hull = contours[0]
+        maxLen = len(hull)
+
+        targetContour = contours[0]
+
+        for contour in contours:
+            temp = cv2.convexHull(contour)
+            if len(temp) > maxLen:
+                hull = temp
+                maxLen = len(temp)
+                targetContour = contour
+
+        epsilon = 0.01* cv2.arcLength(hull, True)
+        hull_approx = cv2.approxPolyDP(hull, epsilon, True)
+
+        # TODO: to be tuned
+        if len(hull_approx) < 3:
+            return False, 0.0, 0.0
+
+        left = right = hull_approx[0][0][0]
+        top = bot = hull_approx[0][0][1]
+
+        for pt in hull_approx:
+            left = min(left, pt[0][0])
+            right = max(right, pt[0][0])
+            top = min(top, pt[0][1])
+            bot = max(bot, pt[0][1])
+
+        # cv2.drawContours(img, [hull_approx], -1, (255, 0, 0), 2)
+        # cv2.drawContours(img, targetContour, -1, (255, 0, 0), 2)
+
+        # cv2.circle(img, (left, top), 8, (255, 0, 0), -1)
+        # cv2.circle(img, (right, top), 6, (0, 255, 0), -1)
+        # cv2.circle(img, (left, bot), 4, (0, 0, 255), -1)
+        # cv2.circle(img, (right, bot), 2, (255, 255, 255), -1)
+
+        center = [(left+right)/2, (top+bot)/2]
+
+        # print(center[0], center[1])
+
+        cv2.circle(img, (int(center[0]), int(center[1])), 4, (255, 0, 0), -1)
+
+        plt.imshow(img)
+        plt.show()
+
+        return True, 0.0, 0.0
+
 
     def prepare_output_image(self, camera_frame):
         '''Prepare output image for drive station.
