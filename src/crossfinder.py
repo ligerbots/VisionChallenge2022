@@ -4,6 +4,7 @@ import sys
 import math
 import cv2
 import numpy                    # might be needed
+import matplotlib.pyplot as plt
 
 
 class CrossFinder:
@@ -35,6 +36,10 @@ class CrossFinder:
         where "success" = True if found, False if could not find good cross
         angle should be in degrees'''
 
+        img = cv2.cvtColor(camera_frame, cv2.COLOR_BGR2HSV)
+
+        # plt.imshow(img[:, :, 2], cmap = 'gray')
+        # plt.show()
         return False, 0.0, 0.0
 
     def prepare_output_image(self, camera_frame):
