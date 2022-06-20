@@ -25,6 +25,8 @@ class CrossFinder:
         '''Initialization routine
            put any instance variable initialization here'''
 
+        self.target_center = None
+        self.target_contour = None
         return
 
     def process_image(self, camera_frame):
@@ -35,37 +37,40 @@ class CrossFinder:
              success, distance, angle
         where "success" = True if found, False if could not find good cross
         angle should be in degrees'''
+
+        # clear values from previous image
+        self.target_center = self.target_contour = None
+
         img = camera_frame
 
         threshold = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
         myH, myS, myV = 79, 224, 208
 
-        hsvThreshold = 50
+        hsvThreshold = 60
 
         # plt.imshow(img)
         filtered = cv2.inRange(threshold, (myH - hsvThreshold, myS - hsvThreshold, myV - hsvThreshold), (myH + hsvThreshold, myS + hsvThreshold, myV + hsvThreshold))
 
         contours, hierarchy = cv2.findContours(filtered, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
+        if len(contours) < 1:
+            return False, 0.0, 0.0
+
         hull = contours[0]
         maxLen = len(hull)
 
-        targetContour = contours[0]
+        self.target_contour = contours[0]
 
         for contour in contours:
             temp = cv2.convexHull(contour)
             if len(temp) > maxLen:
                 hull = temp
                 maxLen = len(temp)
-                targetContour = contour
+                self.target_contour = contour
 
         epsilon = 0.01* cv2.arcLength(hull, True)
         hull_approx = cv2.approxPolyDP(hull, epsilon, True)
-
-        # TODO: to be tuned
-        if len(hull_approx) < 3:
-            return False, 0.0, 0.0
 
         left = right = hull_approx[0][0][0]
         top = bot = hull_approx[0][0][1]
@@ -84,14 +89,26 @@ class CrossFinder:
         # cv2.circle(img, (left, bot), 4, (0, 0, 255), -1)
         # cv2.circle(img, (right, bot), 2, (255, 255, 255), -1)
 
-        center = [(left+right)/2, (top+bot)/2]
+        hull_area = cv2.contourArea(hull_approx)
+        target_width = right - left
+        target_height = bot - top
 
-        # print(center[0], center[1])
+        target_height_aspect_ratio = CrossFinder.TARGET_HEIGHT/float(target_height)
+        target_width_aspect_ratio = CrossFinder.TARGET_WIDTH/float(target_width)
+        target_area_ratio = (CrossFinder.TARGET_HEIGHT * CrossFinder.TARGET_WIDTH)/float(target_width * target_height)
 
-        cv2.circle(img, (int(center[0]), int(center[1])), 4, (255, 0, 0), -1)
+        print(target_height_aspect_ratio, target_width_aspect_ratio, target_area_ratio)
 
-        plt.imshow(img)
-        plt.show()
+        if not abs(target_width_aspect_ratio - target_height_aspect_ratio) <= 0.15:
+            return False, 0.0, 0.0
+
+        if not abs(target_area_ratio - target_height_aspect_ratio*target_height_aspect_ratio) <= 0.3:
+            return False, 0.0, 0.0
+
+        self.target_center = [(left+right)/2, (top+bot)/2]
+
+        # plt.imshow(img)
+        # plt.show()
 
         return True, 0.0, 0.0
 
@@ -107,8 +124,10 @@ class CrossFinder:
         # add any markup here. Look at OpenCV routines like (examples):
         #   drawMarker(), drawContours(), text()
 
+        # print(self.target_center[0], self.target_center[1])
         # example: put a red cross at location 200, 200
-        cv2.drawMarker(output_frame, (200, 200), (0, 0, 255), cv2.MARKER_CROSS, 20, 3)
+        if self.target_center is not None:
+            cv2.drawMarker(output_frame, (int(self.target_center[0]), int(self.target_center[1])), (0, 0, 255), cv2.MARKER_CROSS, 20, 3)
 
         return output_frame
 
