@@ -99,9 +99,11 @@ class CrossFinder:
 
         print(target_height_aspect_ratio, target_width_aspect_ratio, target_area_ratio)
 
+        # comparing the ratio of side lengths of the target
         if not abs(target_width_aspect_ratio - target_height_aspect_ratio) <= 0.15:
             return False, 0.0, 0.0
 
+        # comparing the ratio of area of the target
         if not abs(target_area_ratio - target_height_aspect_ratio*target_height_aspect_ratio) <= 0.3:
             return False, 0.0, 0.0
 
@@ -111,7 +113,6 @@ class CrossFinder:
         # plt.show()
 
         return True, 0.0, 0.0
-
 
     def prepare_output_image(self, camera_frame):
         '''Prepare output image for drive station.
