@@ -13,6 +13,11 @@ class CrossFinder:
     # vertical tilt of the camera
     CAMERA_ANGLE = math.radians(31)
 
+    # camera field of view
+    # Assumes that the camera is turned 90 degrees, like in 2022
+    CAMERA_HFOV = math.radians(50.0)
+    CAMERA_VFOV = math.radians(79.5)
+
     # height of the center of the target off the floor
     TARGET_HEIGHT_FROM_FLOOR = 72.0   # inches
 
