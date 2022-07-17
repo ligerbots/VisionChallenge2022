@@ -102,7 +102,7 @@ class CrossFinder:
         target_width_aspect_ratio = CrossFinder.TARGET_WIDTH/float(target_width)
         target_area_ratio = (CrossFinder.TARGET_HEIGHT * CrossFinder.TARGET_WIDTH)/float(target_width * target_height)
 
-        print(target_height_aspect_ratio, target_width_aspect_ratio, target_area_ratio)
+        # print(target_height_aspect_ratio, target_width_aspect_ratio, target_area_ratio)
 
         # comparing the ratio of side lengths of the target
         if not abs(target_width_aspect_ratio - target_height_aspect_ratio) <= 0.15:
