@@ -63,15 +63,15 @@ class CrossFinder:
             return False, 0.0, 0.0
 
         hull = contours[0]
-        maxLen = len(hull)
+        maxArea = cv2.contourArea(hull)
 
         self.target_contour = contours[0]
 
         for contour in contours:
             temp = cv2.convexHull(contour)
-            if len(temp) > maxLen:
+            if cv2.contourArea(temp) > maxArea:
                 hull = temp
-                maxLen = len(temp)
+                maxArea = cv2.contourArea(temp)
                 self.target_contour = contour
 
         epsilon = 0.01* cv2.arcLength(hull, True)
@@ -86,36 +86,29 @@ class CrossFinder:
             top = min(top, pt[0][1])
             bot = max(bot, pt[0][1])
 
-        # cv2.drawContours(img, [hull_approx], -1, (255, 0, 0), 2)
-        # cv2.drawContours(img, targetContour, -1, (255, 0, 0), 2)
-
-        # cv2.circle(img, (left, top), 8, (255, 0, 0), -1)
-        # cv2.circle(img, (right, top), 6, (0, 255, 0), -1)
-        # cv2.circle(img, (left, bot), 4, (0, 0, 255), -1)
-        # cv2.circle(img, (right, bot), 2, (255, 255, 255), -1)
-
-        hull_area = cv2.contourArea(hull_approx)
         target_width = right - left
         target_height = bot - top
 
         target_height_aspect_ratio = CrossFinder.TARGET_HEIGHT/float(target_height)
         target_width_aspect_ratio = CrossFinder.TARGET_WIDTH/float(target_width)
+        # TODO: use the target contour area vs. real X's area
         target_area_ratio = (CrossFinder.TARGET_HEIGHT * CrossFinder.TARGET_WIDTH)/float(target_width * target_height)
+        # TODO: alternatively, which is probably a better way, is to use the target perimeter and real world perimeter
 
-        # print(target_height_aspect_ratio, target_width_aspect_ratio, target_area_ratio)
+        # print(target_height_aspect_ratio - target_width_aspect_ratio, target_area_ratio - target_height_aspect_ratio*target_height_aspect_ratio)
 
         # comparing the ratio of side lengths of the target
-        if not abs(target_width_aspect_ratio - target_height_aspect_ratio) <= 0.15:
+        # not using abs() here on purpose because it seems that the difference in such way is always positive values if the target is similar enough
+        if not (target_height_aspect_ratio - target_width_aspect_ratio <= 0.15 and target_height_aspect_ratio - float(target_width_aspect_ratio) >= 0.0):
             return False, 0.0, 0.0
 
-        # comparing the ratio of area of the target
-        if not abs(target_area_ratio - target_height_aspect_ratio*target_height_aspect_ratio) <= 0.3:
-            return False, 0.0, 0.0
+        # is it true that if the it passes the if statemetn above, it will almost definetly satisfy this one below as well?
+
+        # # comparing the ratio of area of the target
+        # if not target_area_ratio - target_height_aspect_ratio*target_height_aspect_ratio <= 0.3:
+        #     return False, 0.0, 0.0
 
         self.target_center = [(left+right)/2, (top+bot)/2]
-
-        # plt.imshow(img)
-        # plt.show()
 
         return True, 0.0, 0.0
 
@@ -134,9 +127,13 @@ class CrossFinder:
         # example: put a red cross at location 200, 200
         if self.target_center is not None:
             cv2.drawMarker(output_frame, (int(self.target_center[0]), int(self.target_center[1])), (0, 0, 255), cv2.MARKER_CROSS, 20, 3)
+            cv2.drawContours(output_frame, [self.target_contour], -1, (255, 0, 0), 1)
 
         return output_frame
 
+    # TODO: Complete this func
+    # def calculate_dis_and_angle(self):
+    #     angle =
 
 # --------------------------------------------------------------------------------
 # Main routines, used for running the finder by itself for debugging and timing
