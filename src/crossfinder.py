@@ -110,7 +110,13 @@ class CrossFinder:
 
         self.target_center = [(left+right)/2, (top+bot)/2]
 
-        return True, 0.0, 0.0
+        x_res = camera_frame.shape[1]
+        y_res = camera_frame.shape[0]
+
+        angle = (self.target_center[0] - (x_res/2)) * self.CAMERA_HFOV/x_res
+        dis = (self.TARGET_HEIGHT_FROM_FLOOR - self.CAMERA_HEIGHT)/math.tan((self.target_center[1] - (y_res/2)) * self.CAMERA_VFOV/y_res + self.CAMERA_ANGLE)
+
+        return True, dis, math.degrees(angle)
 
     def prepare_output_image(self, camera_frame):
         '''Prepare output image for drive station.
@@ -130,10 +136,6 @@ class CrossFinder:
             cv2.drawContours(output_frame, [self.target_contour], -1, (255, 0, 0), 1)
 
         return output_frame
-
-    # TODO: Complete this func
-    # def calculate_dis_and_angle(self):
-    #     angle =
 
 # --------------------------------------------------------------------------------
 # Main routines, used for running the finder by itself for debugging and timing
