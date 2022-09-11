@@ -54,7 +54,7 @@ class CrossFinder:
 
         myH, myS, myV = 79, 224, 208
 
-        hsvThreshold = 60
+        hsvThreshold = 50
 
         # plt.imshow(img)
         filtered = cv2.inRange(threshold, (myH - hsvThreshold, myS - hsvThreshold, myV - hsvThreshold), (myH + hsvThreshold, myS + hsvThreshold, myV + hsvThreshold))
@@ -91,21 +91,26 @@ class CrossFinder:
         target_width = right - left
         target_height = bot - top
 
+        if target_height == 0 or target_width == 0:
+            return False, 0.0, 0.0
+
         target_height_aspect_ratio = CrossFinder.TARGET_HEIGHT/float(target_height)
         target_width_aspect_ratio = CrossFinder.TARGET_WIDTH/float(target_width)
+
+        if cv2.contourArea(self.target_contour) == 0 or cv2.arcLength(self.target_contour, True) == 0:
+            return False, 0.0, 0.0
 
         target_area_ratio = CrossFinder.TARGET_AREA/cv2.contourArea(self.target_contour)
 
         target_perimeter_ratio = CrossFinder.TARGET_PERIMETER/cv2.arcLength(self.target_contour, True)
 
-        # print(target_height_aspect_ratio - target_width_aspect_ratio, target_area_ratio - target_height_aspect_ratio*target_height_aspect_ratio)
+        print("Side Length", abs(target_height_aspect_ratio - target_width_aspect_ratio))
 
         # comparing the ratio of side lengths of the target
-        # not using abs() here on purpose because it seems that the difference in such way is always positive values if the target is similar enough
-        if not target_height_aspect_ratio - target_width_aspect_ratio <= 0.15 and target_height_aspect_ratio - float(target_width_aspect_ratio) >= 0.0:
+        if not abs(target_height_aspect_ratio - target_width_aspect_ratio) <= 0.15:
             return False, 0.0, 0.0
 
-        # print("Area: ", target_area_ratio - target_height_aspect_ratio* target_height_aspect_ratio, "Perimeter: ", target_perimeter_ratio - target_height_aspect_ratio)
+        print("Area: ", abs(target_area_ratio - target_perimeter_ratio* target_perimeter_ratio), "Perimeter: ", abs(target_perimeter_ratio - target_height_aspect_ratio))
 
         # comparing the ratio of area and perimeter of the target
         if not (abs(target_area_ratio - target_height_aspect_ratio* target_height_aspect_ratio) <= 0.3 and abs(target_perimeter_ratio - target_height_aspect_ratio) <= 0.2):
