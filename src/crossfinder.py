@@ -25,6 +25,8 @@ class CrossFinder:
     # target dimensions (inches)
     TARGET_WIDTH = 8.5
     TARGET_HEIGHT = 11.0
+    TARGET_AREA = 44.029
+    TARGET_PERIMETER = 50.468
 
     def __init__(self):
         '''Initialization routine
@@ -91,22 +93,23 @@ class CrossFinder:
 
         target_height_aspect_ratio = CrossFinder.TARGET_HEIGHT/float(target_height)
         target_width_aspect_ratio = CrossFinder.TARGET_WIDTH/float(target_width)
-        # TODO: use the target contour area vs. real X's area
-        target_area_ratio = (CrossFinder.TARGET_HEIGHT * CrossFinder.TARGET_WIDTH)/float(target_width * target_height)
-        # TODO: alternatively, which is probably a better way, is to use the target perimeter and real world perimeter
+
+        target_area_ratio = CrossFinder.TARGET_AREA/cv2.contourArea(self.target_contour)
+
+        target_perimeter_ratio = CrossFinder.TARGET_PERIMETER/cv2.arcLength(self.target_contour, True)
 
         # print(target_height_aspect_ratio - target_width_aspect_ratio, target_area_ratio - target_height_aspect_ratio*target_height_aspect_ratio)
 
         # comparing the ratio of side lengths of the target
         # not using abs() here on purpose because it seems that the difference in such way is always positive values if the target is similar enough
-        if not (target_height_aspect_ratio - target_width_aspect_ratio <= 0.15 and target_height_aspect_ratio - float(target_width_aspect_ratio) >= 0.0):
+        if not target_height_aspect_ratio - target_width_aspect_ratio <= 0.15 and target_height_aspect_ratio - float(target_width_aspect_ratio) >= 0.0:
             return False, 0.0, 0.0
 
-        # is it true that if the it passes the if statemetn above, it will almost definetly satisfy this one below as well?
+        # print("Area: ", target_area_ratio - target_height_aspect_ratio* target_height_aspect_ratio, "Perimeter: ", target_perimeter_ratio - target_height_aspect_ratio)
 
-        # # comparing the ratio of area of the target
-        # if not target_area_ratio - target_height_aspect_ratio*target_height_aspect_ratio <= 0.3:
-        #     return False, 0.0, 0.0
+        # comparing the ratio of area and perimeter of the target
+        if not (abs(target_area_ratio - target_height_aspect_ratio* target_height_aspect_ratio) <= 0.3 and abs(target_perimeter_ratio - target_height_aspect_ratio) <= 0.2):
+            return False, 0.0, 0.0
 
         self.target_center = [(left+right)/2, (top+bot)/2]
 
